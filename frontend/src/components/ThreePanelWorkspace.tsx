@@ -3,7 +3,7 @@ import {
   Search, Plus, BookOpen, ExternalLink, Sparkles,
   Copy, Check, RefreshCw, Trash2,
   AlertCircle, FileText, CheckCircle2, History, X, RotateCcw,
-  CheckSquare, Square, Filter, ChevronDown, ChevronUp, Clock, Info, ShieldCheck
+  CheckSquare, Square, Filter, ChevronDown, ChevronUp, Clock, Info, ShieldCheck, MoreVertical
 } from 'lucide-react';
 import {
   DocumentMeta, ArticleHistoryItem, RetrievedEvidence, PipelineStage,
@@ -49,9 +49,10 @@ export const ThreePanelWorkspace: React.FC<ThreePanelWorkspaceProps> = ({
   const [knowledgeTab, setKnowledgeTab] = useState<'active' | 'history'>('active');
   const [articleSearchQuery, setArticleSearchQuery] = useState('');
   const [selectedArticles, setSelectedArticles] = useState<Set<string>>(new Set());
+  const [showAdvancedMenu, setShowAdvancedMenu] = useState(false);
+  const [reactivatingTitle, setReactivatingTitle] = useState<string | null>(null);
   
   const [inputQuery, setInputQuery] = useState('');
-  const [articleInput, setArticleInput] = useState('');
   const [isIngesting, setIsIngesting] = useState(false);
   const [actionLoadingTitle, setActionLoadingTitle] = useState<string | null>(null);
   const [ingestSuccess, setIngestSuccess] = useState<string | null>(null);
@@ -73,9 +74,13 @@ export const ThreePanelWorkspace: React.FC<ThreePanelWorkspaceProps> = ({
     doc.title.toLowerCase().includes(articleSearchQuery.toLowerCase())
   );
 
-  const filteredHistory = articleHistory.filter((item) =>
-    item.title.toLowerCase().includes(articleSearchQuery.toLowerCase())
-  );
+  // Filter history to only show inactive articles (not currently active)
+  const activeSet = new Set(documents.map((d) => d.title.toLowerCase().trim()));
+  const filteredHistory = articleHistory
+    .filter((item) => !activeSet.has(item.title.toLowerCase().trim()))
+    .filter((item) =>
+      item.title.toLowerCase().includes(articleSearchQuery.toLowerCase())
+    );
 
   // Toggle selection for a single article
   const toggleArticleSelect = (title: string) => {
@@ -154,22 +159,37 @@ export const ThreePanelWorkspace: React.FC<ThreePanelWorkspaceProps> = ({
     setInputQuery(prompt);
   };
 
-  const handleIngest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!articleInput.trim() || isIngesting) return;
+  const handleIngest = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!articleSearchQuery.trim() || isIngesting) return;
     setIsIngesting(true);
     setIngestError(null);
     setIngestSuccess(null);
     try {
-      const parsed = articleInput.split(',').map((s) => s.trim()).filter(Boolean);
+      const parsed = articleSearchQuery.split(',').map((s) => s.trim()).filter(Boolean);
       await onLoadCustomArticles(parsed);
-      setArticleInput('');
-      setIngestSuccess(`Successfully ingested ${parsed.length} article(s)!`);
-      setTimeout(() => setIngestSuccess(null), 4000);
+      setArticleSearchQuery('');
+      setIngestSuccess(`Added ${parsed.length} article(s)!`);
+      setTimeout(() => setIngestSuccess(null), 3500);
     } catch (err: any) {
       setIngestError(err.message || 'Failed to ingest articles');
     } finally {
       setIsIngesting(false);
+    }
+  };
+
+  const handleReactivate = async (title: string) => {
+    setReactivatingTitle(title);
+    setIngestError(null);
+    setIngestSuccess(null);
+    try {
+      await onLoadCustomArticles([title]);
+      setIngestSuccess(`'${title}' re-activated!`);
+      setTimeout(() => setIngestSuccess(null), 3500);
+    } catch (err: any) {
+      setIngestError(err.message || `Failed to re-activate '${title}'`);
+    } finally {
+      setReactivatingTitle(null);
     }
   };
 
@@ -234,17 +254,40 @@ export const ThreePanelWorkspace: React.FC<ThreePanelWorkspaceProps> = ({
             </span>
           </div>
 
-          {/* Search Bar for filtering articles */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-            <input
-              type="text"
-              placeholder="Filter loaded articles..."
-              value={articleSearchQuery}
-              onChange={(e) => setArticleSearchQuery(e.target.value)}
-              className="w-full bg-[#1e293b]/70 border border-slate-700/60 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#38bdf8]"
-            />
-          </div>
+          {/* Unified Search + Add Article Bar */}
+          <form onSubmit={handleIngest} className="relative flex gap-1.5">
+            <div className="relative flex-1">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+              <input
+                type="text"
+                placeholder="Search or add articles..."
+                value={articleSearchQuery}
+                onChange={(e) => setArticleSearchQuery(e.target.value)}
+                className="w-full bg-[#1e293b]/70 border border-slate-700/60 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#38bdf8]"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isIngesting || !articleSearchQuery.trim()}
+              className="px-2.5 py-1.5 rounded-lg bg-[#38bdf8] hover:bg-sky-300 disabled:opacity-40 text-[#090d16] font-bold text-xs transition-all shrink-0 flex items-center gap-1 cursor-pointer shadow-md"
+              title="Add Wikipedia article(s). Multiple can be separated by commas."
+            >
+              {isIngesting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+              <span>Add</span>
+            </button>
+          </form>
+          {ingestSuccess && (
+            <div className="text-[11px] text-emerald-400 flex items-center gap-1 font-medium">
+              <CheckCircle2 className="w-3 h-3 shrink-0" />
+              <span className="line-clamp-1">{ingestSuccess}</span>
+            </div>
+          )}
+          {ingestError && (
+            <div className="text-[11px] text-rose-400 flex items-center gap-1 font-medium">
+              <AlertCircle className="w-3 h-3 shrink-0" />
+              <span className="line-clamp-1">{ingestError}</span>
+            </div>
+          )}
 
           {/* Sub-tabs: Active vs History */}
           <div className="flex items-center gap-1 bg-[#1e293b]/50 p-1 rounded-lg border border-slate-800">
@@ -268,77 +311,79 @@ export const ThreePanelWorkspace: React.FC<ThreePanelWorkspaceProps> = ({
               }`}
             >
               <History className="w-3 h-3" />
-              <span>History ({articleHistory.length})</span>
+              <span>History ({filteredHistory.length})</span>
             </button>
           </div>
         </div>
 
-        {/* Selection & Selective Reload Controls */}
+        {/* Simplified Action Bar */}
         {knowledgeTab === 'active' && documents.length > 0 && (
-          <div className="p-2.5 border-b border-[#1e293b] bg-[#131d31] space-y-2">
-            {/* Selection Scope Info & Bulk Actions */}
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-300 font-medium">
-                Scope:{' '}
-                <b className="text-[#38bdf8]">
-                  {selectedArticles.size > 0 ? `${selectedArticles.size} selected` : `All (${documents.length})`}
-                </b>
+          <div className="px-3 py-2 border-b border-[#1e293b] bg-[#111927] flex items-center justify-between text-xs">
+            {/* Selection toggle */}
+            <button
+              onClick={selectedArticles.size === documents.length ? deselectAllArticles : selectAllArticles}
+              className="flex items-center gap-1.5 text-slate-300 hover:text-white cursor-pointer transition-colors"
+              title={selectedArticles.size === documents.length ? 'Deselect All' : 'Select All'}
+            >
+              {selectedArticles.size === documents.length ? (
+                <CheckSquare className="w-3.5 h-3.5 text-[#38bdf8]" />
+              ) : selectedArticles.size > 0 ? (
+                <CheckSquare className="w-3.5 h-3.5 text-sky-400/70" />
+              ) : (
+                <Square className="w-3.5 h-3.5 text-slate-500" />
+              )}
+              <span className="text-[11px] font-medium">
+                {selectedArticles.size > 0 ? `${selectedArticles.size} of ${documents.length} selected` : 'Select all'}
               </span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={selectedArticles.size === documents.length ? deselectAllArticles : selectAllArticles}
-                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-mono text-[10px] cursor-pointer"
-                  title={selectedArticles.size === documents.length ? 'Deselect All' : 'Select All'}
-                >
-                  {selectedArticles.size === documents.length ? 'Deselect All' : 'Select All'}
-                </button>
-                <button
-                  onClick={selectFailedArticles}
-                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 font-mono text-[10px] cursor-pointer"
-                  title="Select failed/stale articles"
-                >
-                  Select Failed
-                </button>
-              </div>
-            </div>
+            </button>
 
-            {/* Selective Reload Operations Ribbon */}
-            <div className="grid grid-cols-2 gap-1.5">
+            {/* Actions: Primary Reload Button + More Options Menu */}
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => handleTriggerReload('reload_selected')}
-                className="py-1 px-2 rounded bg-sky-950/80 hover:bg-sky-900 border border-sky-500/40 text-sky-300 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
-                title="Re-fetch and update selected articles"
+                className="px-2.5 py-1 rounded-md bg-[#0284c7]/20 hover:bg-[#0284c7]/30 text-[#38bdf8] border border-[#0284c7]/40 text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer"
+                title="Reload selected articles (or all if none selected)"
               >
                 <RefreshCw className="w-3 h-3" />
-                <span>Reload Selected</span>
+                <span>{selectedArticles.size > 0 ? `Reload (${selectedArticles.size})` : 'Reload'}</span>
               </button>
 
-              <button
-                onClick={() => handleTriggerReload('refresh_wikipedia')}
-                className="py-1 px-2 rounded bg-teal-950/80 hover:bg-teal-900 border border-teal-500/40 text-teal-300 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
-                title="Check Wikipedia for changes and update modified content"
-              >
-                <ExternalLink className="w-3 h-3" />
-                <span>Refresh Wiki</span>
-              </button>
-
-              <button
-                onClick={() => handleTriggerReload('reprocess_content')}
-                className="py-1 px-2 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-300 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
-                title="Re-chunk and re-embed from stored text (0 network calls)"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Reprocess</span>
-              </button>
-
-              <button
-                onClick={() => handleTriggerReload('reload_all')}
-                className="py-1 px-2 rounded bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                title="Reload all managed articles"
-              >
-                <RefreshCw className="w-3 h-3" />
-                <span>Reload All</span>
-              </button>
+              {/* More Actions Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedMenu(!showAdvancedMenu)}
+                  className="p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs transition-all cursor-pointer"
+                  title="Advanced options"
+                >
+                  <MoreVertical className="w-3.5 h-3.5" />
+                </button>
+                {showAdvancedMenu && (
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-[#1e293b] border border-slate-700 rounded-lg shadow-xl p-1 z-30 text-[11px] flex flex-col gap-0.5">
+                    <button
+                      onClick={() => { setShowAdvancedMenu(false); handleTriggerReload('refresh_wikipedia'); }}
+                      className="w-full text-left px-2 py-1.5 rounded hover:bg-slate-700/80 text-slate-200 flex items-center gap-2 cursor-pointer"
+                    >
+                      <ExternalLink className="w-3 h-3 text-teal-400" />
+                      <span>Check Wiki updates</span>
+                    </button>
+                    <button
+                      onClick={() => { setShowAdvancedMenu(false); handleTriggerReload('reprocess_content'); }}
+                      className="w-full text-left px-2 py-1.5 rounded hover:bg-slate-700/80 text-slate-200 flex items-center gap-2 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3 text-indigo-400" />
+                      <span>Reprocess (Offline)</span>
+                    </button>
+                    <button
+                      onClick={() => { setShowAdvancedMenu(false); handleTriggerReload('reload_all'); }}
+                      className="w-full text-left px-2 py-1.5 rounded hover:bg-slate-700/80 text-slate-200 flex items-center gap-2 cursor-pointer"
+                    >
+                      <RefreshCw className="w-3 h-3 text-sky-400" />
+                      <span>Reload all articles</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -366,44 +411,6 @@ export const ThreePanelWorkspace: React.FC<ThreePanelWorkspaceProps> = ({
             </div>
           </div>
         )}
-
-        {/* Add Source Form */}
-        <div className="p-3 border-b border-[#1e293b] bg-[#0b1220]/60">
-          <form onSubmit={handleIngest} className="space-y-2">
-            <label className="text-[11px] font-medium text-slate-400 block">
-              Add Wikipedia Article(s):
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="e.g. Histiaeus, Machine Learning"
-                value={articleInput}
-                onChange={(e) => setArticleInput(e.target.value)}
-                className="w-full bg-[#1e293b]/80 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#38bdf8]"
-              />
-              <button
-                type="submit"
-                disabled={isIngesting || !articleInput.trim()}
-                className="px-3 py-1.5 rounded-lg bg-[#38bdf8] hover:bg-sky-300 disabled:opacity-50 text-[#090d16] font-bold text-xs transition-all shrink-0 flex items-center gap-1 cursor-pointer shadow-md"
-              >
-                {isIngesting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                <span>Add</span>
-              </button>
-            </div>
-            {ingestSuccess && (
-              <div className="text-[11px] text-emerald-400 flex items-center gap-1 font-medium">
-                <CheckCircle2 className="w-3 h-3 shrink-0" />
-                <span className="line-clamp-1">{ingestSuccess}</span>
-              </div>
-            )}
-            {ingestError && (
-              <div className="text-[11px] text-rose-400 flex items-center gap-1 font-medium">
-                <AlertCircle className="w-3 h-3 shrink-0" />
-                <span className="line-clamp-1">{ingestError}</span>
-              </div>
-            )}
-          </form>
-        </div>
 
         {/* Article Records List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
@@ -491,28 +498,37 @@ export const ThreePanelWorkspace: React.FC<ThreePanelWorkspaceProps> = ({
             )
           ) : (
             filteredHistory.length === 0 ? (
-              <div className="text-center py-8 text-xs text-slate-400">No history records found.</div>
+              <div className="text-center py-8 text-xs text-slate-400">No inactive history records.</div>
             ) : (
-              filteredHistory.map((item) => (
-                <div
-                  key={item.title}
-                  className="p-2.5 rounded-xl border border-slate-800 bg-[#1e293b]/40 text-xs flex flex-col gap-1"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-200">{item.title}</span>
-                    <button
-                      onClick={() => onLoadCustomArticles([item.title])}
-                      className="px-2 py-0.5 rounded bg-sky-950 text-sky-400 hover:bg-sky-900 border border-sky-500/30 text-[10px] font-bold cursor-pointer"
-                    >
-                      Re-activate
-                    </button>
+              filteredHistory.map((item) => {
+                const isReactivating = reactivatingTitle === item.title;
+                return (
+                  <div
+                    key={item.title}
+                    className="p-2.5 rounded-xl border border-slate-800 bg-[#1e293b]/40 text-xs flex flex-col gap-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-200 truncate">{item.title}</span>
+                      <button
+                        onClick={() => handleReactivate(item.title)}
+                        disabled={isReactivating}
+                        className={`px-2 py-0.5 rounded border text-[10px] font-bold cursor-pointer flex items-center gap-1 transition-all ${
+                          isReactivating
+                            ? 'bg-sky-950/50 text-sky-400/60 border-sky-500/20'
+                            : 'bg-sky-950 text-sky-400 hover:bg-sky-900 border-sky-500/30 hover:text-sky-300'
+                        }`}
+                      >
+                        {isReactivating && <RefreshCw className="w-2.5 h-2.5 animate-spin" />}
+                        <span>{isReactivating ? 'Activating...' : 'Re-activate'}</span>
+                      </button>
+                    </div>
+                    <div className="text-[10px] text-slate-400 flex items-center justify-between font-mono">
+                      <span>{item.chunks_count} chunks</span>
+                      <span>{item.char_count.toLocaleString()} chars</span>
+                    </div>
                   </div>
-                  <div className="text-[10px] text-slate-400 flex items-center justify-between font-mono">
-                    <span>{item.chunks_count} chunks</span>
-                    <span>{item.char_count.toLocaleString()} chars</span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )
           )}
         </div>
