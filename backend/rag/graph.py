@@ -26,11 +26,11 @@ class KnowledgeGraphBuilder:
         # 1. Document Cluster Center Nodes
         for i, doc in enumerate(documents_meta):
             title = doc["title"]
-            # Arrange document centers in a wide ring in X-Z plane
+            # Arrange multiple document centers in a wide orbit ring
             angle = (2 * math.pi * i) / total_docs
-            dist = 8.0 if total_docs > 1 else 0.0
+            dist = 14.0 if total_docs > 1 else 0.0
             doc_x = round(dist * math.cos(angle), 2)
-            doc_y = round(math.sin(i * 1.5) * 2.0, 2)
+            doc_y = round(math.sin(i * 1.5) * 2.5, 2)
             doc_z = round(dist * math.sin(angle), 2)
             
             doc_id = f"doc_{hashlib.md5(title.encode()).hexdigest()[:8]}"
@@ -40,8 +40,8 @@ class KnowledgeGraphBuilder:
                 "id": doc_id,
                 "name": title,
                 "type": "document",
-                "val": 12,  # Node size
-                "color": "#9DB2BF",  # Soft Frost Slate Blue
+                "val": 14,
+                "color": "#38BDF8",  # Radiant Luminous Cyan
                 "url": doc.get("url", ""),
                 "char_count": doc.get("char_count", 0),
                 "chunks_count": doc.get("chunks_count", 0),
@@ -50,8 +50,10 @@ class KnowledgeGraphBuilder:
                 "z": doc_z,
             })
 
-        # 2. Chunk Nodes clustered around their parent document
+        # 2. Chunk Nodes clustered around their parent document with Fibonacci spherical galaxy spread
         doc_chunk_counters: Dict[str, int] = {}
+        golden_angle = 2.399963229728653  # pi * (3 - sqrt(5))
+
         for node in chunk_nodes:
             meta = node.metadata or {}
             title = meta.get("doc_title") or meta.get("title") or "Unknown"
@@ -60,23 +62,30 @@ class KnowledgeGraphBuilder:
             counter = doc_chunk_counters.get(title, 0)
             doc_chunk_counters[title] = counter + 1
             
-            # Spherical orbit offset around document center
-            phi = (counter * 137.5) * (math.pi / 180.0) # golden angle
-            rad = 2.5 + (counter % 3) * 0.8
-            h_offset = ((counter % 5) - 2) * 0.7
+            # Fibonacci spherical galaxy distribution to prevent any overlapping
+            theta = counter * golden_angle
             
-            cx = round(doc_x + rad * math.cos(phi), 2)
-            cy = round(doc_y + h_offset, 2)
-            cz = round(doc_z + rad * math.sin(phi), 2)
+            # Distance scales gracefully with square root of chunk index
+            # Layered expansion from 3.5 to 13.5 units
+            r = 3.2 + math.sqrt(counter + 1) * 0.78
+            
+            # Inclination angle mapping across sphere
+            norm_idx = (counter * 0.618033988749895) % 1.0
+            phi = math.acos(max(-0.95, min(0.95, 1.0 - 2.0 * norm_idx)))
+            
+            cx = round(doc_x + r * math.sin(phi) * math.cos(theta), 2)
+            cy = round(doc_y + (r * 0.55) * math.cos(phi), 2)  # subtle galaxy disc flattening
+            cz = round(doc_z + r * math.sin(phi) * math.sin(theta), 2)
 
             is_retrieved = node.node_id in retrieved_ids
-            color = "#DDE6ED" if is_retrieved else "#526D82"  # Ice Platinum if retrieved evidence, Steel Slate if standard
+            # Radiant Emerald if retrieved evidence, Electric Indigo/Periwinkle if standard
+            color = "#34D399" if is_retrieved else "#818CF8"
 
             chunk_node = {
                 "id": node.node_id,
                 "name": f"{title} [{meta.get('section', 'Chunk')}]",
                 "type": "chunk",
-                "val": 6 if is_retrieved else 3,
+                "val": 6 if is_retrieved else 2.5,
                 "color": color,
                 "is_retrieved": is_retrieved,
                 "section": meta.get("section", ""),
@@ -94,7 +103,7 @@ class KnowledgeGraphBuilder:
                 "source": doc_id,
                 "target": node.node_id,
                 "type": "membership",
-                "color": "rgba(157, 178, 191, 0.25)"
+                "color": "rgba(99, 102, 241, 0.22)"
             })
 
         # 3. Query Node (if active query present)
@@ -104,8 +113,8 @@ class KnowledgeGraphBuilder:
                 "id": query_id,
                 "name": f"Query: {active_query[:35]}...",
                 "type": "query",
-                "val": 15,
-                "color": "#DDE6ED",  # Radiant Ice White
+                "val": 16,
+                "color": "#F59E0B",  # Radiant Amber Gold
                 "x": 0.0,
                 "y": 0.0,
                 "z": 0.0,
@@ -117,7 +126,7 @@ class KnowledgeGraphBuilder:
                     "source": query_id,
                     "target": cid,
                     "type": "retrieval_ray",
-                    "color": "#DDE6ED",  # Glowing ice platinum ray
+                    "color": "#34D399",  # Glowing Emerald Laser Ray
                     "animated": True
                 })
 

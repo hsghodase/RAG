@@ -41,22 +41,22 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = ({
           {/* Stats Bar */}
           <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-[#9DB2BF]/20 text-center font-mono">
             <div>
-              <div className="text-sm font-bold text-[#9DB2BF]">
+              <div className="text-sm font-bold text-[#38BDF8]">
                 {graphData?.stats.documents || 0}
               </div>
-              <div className="text-[10px] text-[#526D82] uppercase font-semibold">Documents</div>
+              <div className="text-[10px] text-slate-400 uppercase font-semibold">Documents</div>
             </div>
             <div>
-              <div className="text-sm font-bold text-[#526D82] brightness-150">
+              <div className="text-sm font-bold text-[#818CF8]">
                 {graphData?.stats.chunks || 0}
               </div>
-              <div className="text-[10px] text-[#526D82] uppercase font-semibold">Chunks</div>
+              <div className="text-[10px] text-slate-400 uppercase font-semibold">Chunks</div>
             </div>
             <div>
-              <div className="text-sm font-bold text-[#DDE6ED]">
+              <div className="text-sm font-bold text-[#34D399]">
                 {graphData?.stats.retrieved || 0}
               </div>
-              <div className="text-[10px] text-[#526D82] uppercase font-semibold">Retrieved</div>
+              <div className="text-[10px] text-slate-400 uppercase font-semibold">Retrieved</div>
             </div>
           </div>
         </div>
@@ -123,19 +123,19 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = ({
       {/* Legend / Color Guide */}
       <div className="absolute bottom-6 left-6 z-20 glass-panel px-4 py-2.5 rounded-xl border border-[#9DB2BF]/20 text-[11px] flex items-center gap-4 text-[#DDE6ED] bg-[#27374D]/85 backdrop-blur-md shadow-xl">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#9DB2BF] shadow-[0_0_8px_#9DB2BF]"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-[#38BDF8] shadow-[0_0_8px_#38BDF8]"></span>
           <span>Document Cluster</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#526D82] border border-[#9DB2BF]/40"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-[#818CF8] shadow-[0_0_8px_#818CF8]"></span>
           <span>Semantic Chunk</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#DDE6ED] shadow-[0_0_8px_#DDE6ED]"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]"></span>
           <span>Retrieved Evidence</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#DDE6ED] ring-2 ring-[#9DB2BF]"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B] shadow-[0_0_8px_#F59E0B]"></span>
           <span>Query Vector</span>
         </div>
       </div>

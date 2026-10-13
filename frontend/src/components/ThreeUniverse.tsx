@@ -33,7 +33,7 @@ export const ThreeUniverse: React.FC<ThreeUniverseProps> = ({
     const height = container.clientHeight || (window.innerHeight - 65);
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    const defaultCameraZ = 28;
+    const defaultCameraZ = 34;
     camera.position.set(0, 0, defaultCameraZ);
     camera.lookAt(0, 0, 0);
 
@@ -43,16 +43,16 @@ export const ThreeUniverse: React.FC<ThreeUniverseProps> = ({
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
-    // 2. Lighting with Palette (#9DB2BF and #DDE6ED)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+    // 2. Lighting Setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.PointLight(0xdde6ed, 3.2, 90);
-    keyLight.position.set(10, 15, 20);
+    const keyLight = new THREE.PointLight(0x38bdf8, 3.5, 120);
+    keyLight.position.set(12, 18, 22);
     scene.add(keyLight);
 
-    const fillLight = new THREE.PointLight(0x9db2bf, 2.5, 90);
-    fillLight.position.set(-20, -10, -15);
+    const fillLight = new THREE.PointLight(0x818cf8, 2.8, 120);
+    fillLight.position.set(-22, -12, -18);
     scene.add(fillLight);
 
     // 3. Ambient Star Field / Vector Particles
@@ -62,26 +62,26 @@ export const ThreeUniverse: React.FC<ThreeUniverseProps> = ({
     const starColors = new Float32Array(starCount * 3);
 
     for (let i = 0; i < starCount; i++) {
-      starPositions[i * 3] = (Math.random() - 0.5) * 90;
-      starPositions[i * 3 + 1] = (Math.random() - 0.5) * 90;
-      starPositions[i * 3 + 2] = (Math.random() - 0.5) * 90;
+      starPositions[i * 3] = (Math.random() - 0.5) * 110;
+      starPositions[i * 3 + 1] = (Math.random() - 0.5) * 110;
+      starPositions[i * 3 + 2] = (Math.random() - 0.5) * 110;
 
       const rand = Math.random();
       if (rand < 0.45) {
-        // #9DB2BF (rgb: 157, 178, 191)
-        starColors[i * 3] = 0.61;
-        starColors[i * 3 + 1] = 0.70;
-        starColors[i * 3 + 2] = 0.75;
-      } else if (rand < 0.75) {
-        // #DDE6ED (rgb: 221, 230, 237)
-        starColors[i * 3] = 0.87;
-        starColors[i * 3 + 1] = 0.90;
-        starColors[i * 3 + 2] = 0.93;
+        // Cyan star
+        starColors[i * 3] = 0.22;
+        starColors[i * 3 + 1] = 0.74;
+        starColors[i * 3 + 2] = 0.97;
+      } else if (rand < 0.8) {
+        // Indigo star
+        starColors[i * 3] = 0.51;
+        starColors[i * 3 + 1] = 0.55;
+        starColors[i * 3 + 2] = 0.97;
       } else {
-        // #526D82 (rgb: 82, 109, 130)
-        starColors[i * 3] = 0.32;
-        starColors[i * 3 + 1] = 0.43;
-        starColors[i * 3 + 2] = 0.51;
+        // Emerald / white star
+        starColors[i * 3] = 0.85;
+        starColors[i * 3 + 1] = 0.92;
+        starColors[i * 3 + 2] = 0.98;
       }
     }
 
@@ -131,47 +131,69 @@ export const ThreeUniverse: React.FC<ThreeUniverseProps> = ({
       const centerY = (minY + maxY) / 2 || 0;
       const centerZ = (minZ + maxZ) / 2 || 0;
 
-      // Create Nodes using Palette Colors
+      // Create Nodes using dynamic node colors & calibrated star-sizes
       graphData.nodes.forEach((node) => {
-        let radius = 0.45;
-        let colorHex = 0x526d82; // Default chunk: #526D82
+        let radius = 0.24; // Compact star chunk to prevent any crowding
+        let emissiveIntensity = 0.3;
 
         if (node.type === 'document') {
-          radius = 1.15;
-          colorHex = 0x9db2bf; // Document cluster: #9DB2BF
+          radius = 1.1;
+          emissiveIntensity = 0.6;
         } else if (node.type === 'query') {
-          radius = 1.45;
-          colorHex = 0xdde6ed; // Query node: #DDE6ED
+          radius = 1.35;
+          emissiveIntensity = 0.95;
         } else if (node.is_retrieved) {
-          radius = 0.85;
-          colorHex = 0xdde6ed; // Retrieved evidence: #DDE6ED
+          radius = 0.46; // Prominent glowing beacon for retrieved chunks
+          emissiveIntensity = 0.85;
         }
+
+        const nodeColor = new THREE.Color(
+          node.color ||
+            (node.type === 'document'
+              ? '#38BDF8'
+              : node.type === 'query'
+              ? '#F59E0B'
+              : node.is_retrieved
+              ? '#34D399'
+              : '#818CF8')
+        );
 
         const sphereGeo = new THREE.SphereGeometry(radius, 24, 24);
         const sphereMat = new THREE.MeshStandardMaterial({
-          color: colorHex,
-          emissive: colorHex,
-          emissiveIntensity: node.type === 'query' || node.is_retrieved ? 0.65 : 0.25,
-          roughness: 0.2,
-          metalness: 0.75,
+          color: nodeColor,
+          emissive: nodeColor,
+          emissiveIntensity,
+          roughness: 0.25,
+          metalness: 0.7,
         });
 
         const mesh = new THREE.Mesh(sphereGeo, sphereMat);
         mesh.position.set(node.x - centerX, node.y - centerY, node.z - centerZ);
         mesh.userData = { node };
 
-        // Outer glow wireframe ring
-        if (node.type === 'query' || node.type === 'document' || node.is_retrieved) {
-          const ringGeo = new THREE.RingGeometry(radius * 1.3, radius * 1.48, 32);
-          const ringMat = new THREE.MeshBasicMaterial({
-            color: colorHex,
-            side: THREE.DoubleSide,
+        // 3D Orbital wireframe halo for important anchor nodes (documents, queries, retrieved)
+        // Replaces ugly flat clipping 2D rings with sophisticated 3D geometric shields
+        if (node.type === 'document' || node.type === 'query') {
+          const haloGeo = new THREE.IcosahedronGeometry(radius * 1.35, 1);
+          const haloMat = new THREE.MeshBasicMaterial({
+            color: nodeColor,
+            wireframe: true,
             transparent: true,
-            opacity: 0.45,
+            opacity: 0.35,
           });
-          const ring = new THREE.Mesh(ringGeo, ringMat);
-          ring.rotation.x = Math.PI / 2;
-          mesh.add(ring);
+          const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+          mesh.add(haloMesh);
+        } else if (node.is_retrieved) {
+          // Subtle sparkling beacon ring around retrieved evidence
+          const beaconGeo = new THREE.IcosahedronGeometry(radius * 1.4, 0);
+          const beaconMat = new THREE.MeshBasicMaterial({
+            color: 0x34d399,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.5,
+          });
+          const beaconMesh = new THREE.Mesh(beaconGeo, beaconMat);
+          mesh.add(beaconMesh);
         }
 
         nodesGroup.add(mesh);
@@ -194,10 +216,9 @@ export const ThreeUniverse: React.FC<ThreeUniverseProps> = ({
 
         const isRay = link.type === 'retrieval_ray';
         const lineMat = new THREE.LineBasicMaterial({
-          color: isRay ? 0xdde6ed : 0x9db2bf,
+          color: isRay ? 0x34d399 : 0x818cf8,
           transparent: true,
-          opacity: isRay ? 0.9 : 0.25,
-          linewidth: isRay ? 2 : 1,
+          opacity: isRay ? 0.85 : 0.12,
         });
 
         const line = new THREE.Line(lineGeo, lineMat);
@@ -208,14 +229,14 @@ export const ThreeUniverse: React.FC<ThreeUniverseProps> = ({
       const demoClusterCount = 4;
       for (let c = 0; c < demoClusterCount; c++) {
         const angle = (2 * Math.PI * c) / demoClusterCount;
-        const cx = 7.5 * Math.cos(angle);
-        const cz = 7.5 * Math.sin(angle);
+        const cx = 8.0 * Math.cos(angle);
+        const cz = 8.0 * Math.sin(angle);
 
-        const parentGeo = new THREE.SphereGeometry(0.95, 20, 20);
+        const parentGeo = new THREE.SphereGeometry(0.85, 20, 20);
         const parentMat = new THREE.MeshStandardMaterial({
-          color: 0x9db2bf,
-          emissive: 0x27374d,
-          emissiveIntensity: 0.4,
+          color: 0x38bdf8,
+          emissive: 0x0284c7,
+          emissiveIntensity: 0.5,
           roughness: 0.2,
           metalness: 0.8,
         });
@@ -225,15 +246,15 @@ export const ThreeUniverse: React.FC<ThreeUniverseProps> = ({
 
         for (let j = 0; j < 6; j++) {
           const subAngle = (2 * Math.PI * j) / 6;
-          const subGeo = new THREE.SphereGeometry(0.38, 16, 16);
+          const subGeo = new THREE.SphereGeometry(0.24, 16, 16);
           const isHighlight = j % 3 === 0;
           const subMat = new THREE.MeshStandardMaterial({
-            color: isHighlight ? 0xdde6ed : 0x526d82,
-            emissive: isHighlight ? 0x9db2bf : 0x27374d,
-            emissiveIntensity: isHighlight ? 0.45 : 0.2,
+            color: isHighlight ? 0x34d399 : 0x818cf8,
+            emissive: isHighlight ? 0x059669 : 0x4f46e5,
+            emissiveIntensity: isHighlight ? 0.6 : 0.25,
           });
           const subMesh = new THREE.Mesh(subGeo, subMat);
-          subMesh.position.set(cx + 2.2 * Math.cos(subAngle), Math.sin(j) * 1.1, cz + 2.2 * Math.sin(subAngle));
+          subMesh.position.set(cx + 2.5 * Math.cos(subAngle), Math.sin(j) * 1.1, cz + 2.5 * Math.sin(subAngle));
           nodesGroup.add(subMesh);
         }
       }
