@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-heading: 'Space Grotesk', -apple-system, sans-serif;
+    --font-sans: 'Inter', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Slate Blue Palette Tokens */
+    --color-slate-dark: #27374D;
+    --color-slate-mid: #526D82;
+    --color-slate-light: #9DB2BF;
+    --color-slate-ice: #DDE6ED;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-sans);
+    background-color: #121924;
+    background-image: radial-gradient(circle at 50% 0%, #27374D 0%, #16202c 60%, #0e141c 100%);
+    color: #DDE6ED;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(18, 25, 36, 0.8);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(157, 178, 191, 0.35);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(221, 230, 237, 0.6);
+}
+
+/* Glassmorphism Styles themed with #27374D, #526D82, #9DB2BF, #DDE6ED */
+.glass-panel {
+  background: rgba(39, 55, 77, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(157, 178, 191, 0.2);
+}
+
+.glass-panel-glow {
+  background: rgba(39, 55, 77, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(157, 178, 191, 0.4);
+  box-shadow: 0 0 25px -5px rgba(157, 178, 191, 0.2);
+}
+
+.glass-card {
+  background: rgba(82, 109, 130, 0.3);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(157, 178, 191, 0.18);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: rgba(82, 109, 130, 0.5);
+  border-color: rgba(221, 230, 237, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 18px rgba(157, 178, 191, 0.15);
+}
+
+/* Glow & Accents */
+.neon-glow-slate {
+  text-shadow: 0 0 20px rgba(157, 178, 191, 0.6);
+}
+
+.neon-glow-ice {
+  text-shadow: 0 0 20px rgba(221, 230, 237, 0.7);
+}
+
+.neon-border-pulse {
+  animation: border-pulse 3s infinite alternate;
+}
+
+@keyframes border-pulse {
+  0% {
+    border-color: rgba(157, 178, 191, 0.25);
+    box-shadow: 0 0 10px rgba(157, 178, 191, 0.1);
+  }
+  100% {
+    border-color: rgba(221, 230, 237, 0.55);
+    box-shadow: 0 0 20px rgba(221, 230, 237, 0.3);
+  }
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
