@@ -11,7 +11,7 @@ import {
 } from './types';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'workspace' | 'graph'>('workspace');
+  const [activeTab, setActiveTab] = useState<'overview' | 'workspace' | 'graph'>('overview');
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [documents, setDocuments] = useState<DocumentMeta[]>([]);
